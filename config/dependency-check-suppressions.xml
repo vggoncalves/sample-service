@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions
+    xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.4.xsd"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.4.xsd
+        https://dependency-check.github.io/DependencyCheck/dependency-suppression.1.4.xsd">
+
+    <suppress until="2027-02-07Z">
+        <notes><![CDATA[
+        CVE: CVE-2022-31691
+
+        Motivo:
+        Falso positivo identificado pelo OWASP Dependency-Check.
+
+        A vulnerabilidade CVE-2022-31691 aplica-se ao Spring Tools 4
+        para Eclipse e às extensões Spring Boot Tools para VS Code,
+        e não ao artefato Maven
+        org.springframework.boot:spring-boot-devtools.
+
+        Evidência:
+        https://spring.io/security/cve-2022-31691/
+
+        Projeto: Sample
+        Dependência: spring-boot-devtools
+        Revisado em: 2026-08-07
+        Próxima revisão: 2027-02-07
+        ]]></notes>
+
+        <packageUrl regex="true">
+            ^pkg:maven/org\.springframework\.boot/spring-boot-devtools@.*$
+        </packageUrl>
+
+        <cve>CVE-2022-31691</cve>
+    </suppress>
+	
+	<suppress until="2027-02-07Z">
+
+		<notes><![CDATA[
+		CVE: CVE-2026-66299
+
+		Classificação:
+		Não aplicável ao runtime da aplicação Sample.
+
+		Motivo:
+		A vulnerabilidade está especificamente no aplicativo de exemplo
+		WebSocket Chat distribuído com Apache Tomcat.
+
+		A aplicação Sample utiliza Tomcat embarcado através de
+		org.apache.tomcat.embed:tomcat-embed-core e não distribui
+		nem executa o webapp "examples" do Tomcat.
+
+		O próprio advisory do Apache informa que instalações sem
+		o aplicativo examples não são afetadas.
+
+		Tomcat está sendo mantido na versão estável 11.0.24.
+		A correção definitiva da CVE está prevista para Tomcat 11.0.25,
+		ainda não disponível como release estável na data desta análise.
+
+		Revisado em: 2026-08-07
+		Próxima revisão: 2027-02-07
+		]]></notes>
+
+		<packageUrl>
+			pkg:maven/org.apache.tomcat.embed/tomcat-embed-core@11.0.24
+		</packageUrl>
+
+		<cve>CVE-2026-66299</cve>
+
+	</suppress>
+	
+</suppressions>

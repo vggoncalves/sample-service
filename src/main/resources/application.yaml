@@ -1,0 +1,28 @@
+spring:
+    application:
+        name: sample-service
+    jpa:
+        open-in-view: false
+        properties:
+            hibernate:
+                format_sql: true
+
+server:
+    port: 8080
+    shutdown: graceful
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info
+    endpoint:
+        health:
+            probes:
+                enabled: true
+
+springdoc:
+    swagger-ui:
+        path: /swagger-ui.html
+    api-docs:
+        path: /v3/api-docs

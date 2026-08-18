@@ -1,0 +1,15 @@
+spring:
+    datasource:
+        url: jdbc:sqlite:/data/sqlite/sample.db
+        driver-class-name: org.sqlite.JDBC
+
+    jpa:
+        database-platform: org.hibernate.community.dialect.SQLiteDialect
+        hibernate:
+            ddl-auto: validate
+
+    flyway:
+        enabled: true
+        locations:
+            - classpath:db/migration/common
+            - classpath:db/migration/sqlite

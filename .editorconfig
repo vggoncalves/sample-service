@@ -1,0 +1,40 @@
+# Editor configuration, see https://editorconfig.org
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Java
+[*.java]
+indent_style = space
+indent_size = 4
+
+# Maven / XML
+[*.xml]
+indent_style = space
+indent_size = 4
+
+# YAML / JSON / propriedades
+[*.{yml,yaml,json}]
+indent_style = space
+indent_size = 2
+
+[*.properties]
+indent_style = space
+indent_size = 2
+
+# SQL
+[*.sql]
+indent_style = space
+indent_size = 4
+
+# Markdown
+[*.md]
+indent_style = space
+indent_size = 2
+max_line_length = off
+trim_trailing_whitespace = false
