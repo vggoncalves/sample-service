@@ -215,14 +215,28 @@ Esse processo contempla as verificações configuradas no profile `quality`, inc
 
 ## SonarQube
 
+Valide se o token está definido corretamente no ambiente local:
+
+```bash
+export SONAR_TOKEN="token-sonarqube-for-project"
+
+curl --silent \
+  --user "${SONAR_TOKEN}:" \
+  http://host.docker.internal:9000/api/authentication/validate
+  `
+```
+
+
 Para executar análise completa com SonarQube:
 
 ```bash
 mvn clean verify -Pquality \
   -DdataDirectory=/odc-data \
   sonar:sonar \
+  -Dsonar.token="${SONAR_TOKEN}" \
   -Dsonar.projectKey=sample-service \
-  -Dsonar.host.url=http://host.docker.internal:9000
+  -Dsonar.host.url=http://host.docker.internal:9000 \
+  -Dsonar.qualitygate.wait=true
 ```
 
 A autenticação com o SonarQube deve utilizar credencial fornecida fora do código-fonte.
