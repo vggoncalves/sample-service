@@ -2,11 +2,11 @@ package br.com.sample.service.organizationalunits.infrastructure.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import br.com.sample.service.organizationalunits.domain.model.DadosBasicosUnidade;
 import br.com.sample.service.organizationalunits.domain.model.TipoUnidade;
-import br.com.sample.service.organizationalunits.domain.model.UnidadeOrganizacionalPersistida;
+import br.com.sample.service.organizationalunits.domain.model.UnidadeOrganizacional;
 import br.com.sample.service.organizationalunits.domain.repository.UnidadeOrganizacionalRepository;
 import java.time.Instant;
-import java.util.UUID;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,36 +21,36 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @Testcontainers
 @SpringBootTest
 class PostgresPersistenceIntegrationTests {
-
     @Container
     @ServiceConnection
     static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17-alpine")
-            .withDatabaseName("sample_test")
-            .withUsername("sample")
-            .withPassword("sample");
+            .withDatabaseName("sample_test").withUsername("sample").withPassword("sample");
 
-    @Autowired
-    private UnidadeOrganizacionalRepository repository;
-
-    @Autowired
-    private DataSource dataSource;
+    @Autowired private UnidadeOrganizacionalRepository repository;
+    @Autowired private DataSource dataSource;
 
     @Test
-    void iniciaContextoAplicaMigrationEExecutaAdapter() throws Exception {
-        var id = UUID.randomUUID();
-        var instante = Instant.parse("2026-08-18T12:00:00Z");
-        var unidade = new UnidadeOrganizacionalPersistida(
-                id, "MATRIZ", "Unidade Matriz", "MTZ", null, TipoUnidade.INSTITUICAO, null,
-                null, null, true, instante, "teste", instante, "teste", 0);
+    void iniciaContextoAplicaMigrationEExecutaRoundTripDoAgregado() throws Exception {
+        var instante = Instant.parse("2026-08-19T12:00:00Z");
+        var raiz = UnidadeOrganizacional.criar("MATRIZ", dados("Unidade Matriz", null), instante, "teste");
+        var raizSalva = repository.salvar(raiz);
+        var filha = UnidadeOrganizacional.criar(
+                "FILIAL-01", dados("Filial Norte", raizSalva.id()), instante, "teste");
+        var filhaSalva = repository.salvar(filha);
 
-        var salva = repository.salvar(unidade);
-
-        assertThat(repository.buscarPorId(id)).contains(salva);
+        assertThat(repository.buscarPorId(raiz.id()).orElseThrow().estadoPersistido())
+                .isEqualTo(raizSalva.estadoPersistido());
+        assertThat(repository.buscarFilhasDiretas(raiz.id()))
+                .extracting(UnidadeOrganizacional::id).containsExactly(filhaSalva.id());
         assertThat(repository.existePorCodigo("MATRIZ")).isTrue();
         try (var connection = dataSource.getConnection();
                 var result = connection.getMetaData().getTables(null, null, "unidade_organizacional", null)) {
             assertThat(result.next()).isTrue();
         }
         PersistenceSchemaAssertions.assertConstraintsAndIndexes(dataSource);
+    }
+
+    private static DadosBasicosUnidade dados(String nome, java.util.UUID paiId) {
+        return new DadosBasicosUnidade(nome, null, null, TipoUnidade.INSTITUICAO, paiId, null, null);
     }
 }
