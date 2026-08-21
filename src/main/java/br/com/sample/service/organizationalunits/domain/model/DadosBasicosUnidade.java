@@ -14,8 +14,9 @@ public record DadosBasicosUnidade(
         String emailContato,
         String telefone) {
 
-    private static final Pattern EMAIL = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
-    private static final Pattern TELEFONE = Pattern.compile("^\\+[1-9][0-9]{7,14}$");
+    private static final String PREFIXO_CAMPO = "O campo ";
+    private static final Pattern EMAIL = Pattern.compile("^[^\\s@]++@[^\\s@.]++\\.[^\\s@]++$");
+    private static final Pattern PADRAO_TELEFONE = Pattern.compile("^\\+[1-9]\\d{7,14}$");
 
     public DadosBasicosUnidade {
         nome = obrigatorio(nome, "nome", 3, 150);
@@ -39,7 +40,7 @@ public record DadosBasicosUnidade(
             return null;
         }
         normalizado = normalizado.replaceAll("[\\s()\\-]", "");
-        if (!TELEFONE.matcher(normalizado).matches()) {
+        if (!PADRAO_TELEFONE.matcher(normalizado).matches()) {
             throw invalido("telefone", "O telefone deve estar no formato E.164");
         }
         return normalizado;
@@ -47,11 +48,11 @@ public record DadosBasicosUnidade(
 
     private static String obrigatorio(String valor, String campo, int minimo, int maximo) {
         if (valor == null) {
-            throw invalido(campo, "O campo " + campo + " é obrigatório");
+            throw invalido(campo, PREFIXO_CAMPO + campo + " é obrigatório");
         }
         var normalizado = valor.trim();
         if (normalizado.length() < minimo || normalizado.length() > maximo) {
-            throw invalido(campo, "O campo " + campo + " deve possuir entre " + minimo + " e " + maximo + " caracteres");
+            throw invalido(campo, PREFIXO_CAMPO + campo + " deve possuir entre " + minimo + " e " + maximo + " caracteres");
         }
         return normalizado;
     }
@@ -65,7 +66,7 @@ public record DadosBasicosUnidade(
             return null;
         }
         if (normalizado.length() > maximo) {
-            throw invalido(campo, "O campo " + campo + " deve possuir no máximo " + maximo + " caracteres");
+            throw invalido(campo, PREFIXO_CAMPO + campo + " deve possuir no máximo " + maximo + " caracteres");
         }
         return normalizado;
     }

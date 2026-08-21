@@ -215,17 +215,18 @@ Esse processo contempla as verificações configuradas no profile `quality`, inc
 
 ## SonarQube
 
-Valide se o token está definido corretamente no ambiente local:
+Antes da execução, o SonarQube local deve estar disponível em `http://host.docker.internal:9000`. Use tokens com finalidades separadas:
+
+- **Project Token** `sample-service-local`: somente para a análise Maven do projeto `sample-service`;
+- **User Token** `sample-codex`: somente para o MCP e o exportador, protegido fora do repositório em `/root/.codex/secrets/sonarqube.token`.
+
+Informe o Project Token de análise sem gravá-lo no histórico do shell:
 
 ```bash
-export SONAR_TOKEN="token-sonarqube-for-project"
-
-curl --silent \
-  --user "${SONAR_TOKEN}:" \
-  http://host.docker.internal:9000/api/authentication/validate
-  `
+read -r -s -p 'SONAR_TOKEN: ' SONAR_TOKEN
+export SONAR_TOKEN
+printf '\n'
 ```
-
 
 Para executar análise completa com SonarQube:
 
@@ -233,11 +234,35 @@ Para executar análise completa com SonarQube:
 mvn clean verify -Pquality \
   -DdataDirectory=/odc-data \
   sonar:sonar \
-  -Dsonar.token="${SONAR_TOKEN}" \
   -Dsonar.projectKey=sample-service \
   -Dsonar.host.url=http://host.docker.internal:9000 \
   -Dsonar.qualitygate.wait=true
 ```
+
+O SonarScanner for Maven lê `SONAR_TOKEN` diretamente do ambiente, sem expor seu valor nos argumentos do processo.
+
+Quando `-Dsonar.qualitygate.wait=true` estiver ativo, o Maven retorna `BUILD FAILURE` se o Quality Gate for reprovado. Isso não significa que a análise falhou tecnicamente: ela foi enviada e processada pelo SonarQube. Nesse caso, prossiga com a exportação para registrar as evidências e corrigir as issues encontradas.
+
+Para exportar todas as páginas de issues do novo código e do passivo aberto, Security Hotspots e Quality Gate:
+
+```bash
+cd /workspaces/sample/sample-dev-environment
+./scripts/export-sonarqube-report.sh
+```
+
+O exportador usa o User Token protegido configurado pelo `setup-sonarqube-integration.sh` e grava os resultados fora dos repositórios em:
+
+```text
+/data/exportacoes/sonarqube/sample-service/<timestamp>/
+```
+
+No Windows, o mesmo diretório é:
+
+```text
+C:\Dados\sample\exportacoes\sonarqube\sample-service\<timestamp>\
+```
+
+Cada execução gera `issues-new-code.json`, `issues-open.json`, `security-hotspots-to-review.json`, `quality-gate.json` e `summary.md`. O resultado `Quality Gate: ERROR` fica registrado em `quality-gate.json` e resumido em `summary.md`.
 
 A autenticação com o SonarQube deve utilizar credencial fornecida fora do código-fonte.
 

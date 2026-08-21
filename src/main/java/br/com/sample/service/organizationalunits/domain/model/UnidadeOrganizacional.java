@@ -8,7 +8,8 @@ import java.util.regex.Pattern;
 
 public final class UnidadeOrganizacional {
 
-    private static final Pattern CODIGO = Pattern.compile("^[A-Z0-9][A-Z0-9._-]{1,49}$");
+    private static final String CAMPO_ATUALIZADO_EM = "atualizadoEm";
+    private static final Pattern PADRAO_CODIGO = Pattern.compile("^[A-Z0-9][A-Z0-9._-]{1,49}$");
 
     private final UUID id;
     private final String codigo;
@@ -31,10 +32,10 @@ public final class UnidadeOrganizacional {
         ativa = estado.ativa();
         criadoEm = instanteObrigatorio(estado.criadoEm(), "criadoEm");
         criadoPor = atorObrigatorio(estado.criadoPor(), "criadoPor");
-        atualizadoEm = instanteObrigatorio(estado.atualizadoEm(), "atualizadoEm");
+        atualizadoEm = instanteObrigatorio(estado.atualizadoEm(), CAMPO_ATUALIZADO_EM);
         atualizadoPor = atorObrigatorio(estado.atualizadoPor(), "atualizadoPor");
         if (atualizadoEm.isBefore(criadoEm)) {
-            throw invalido("atualizadoEm", "A atualização não pode preceder a criação");
+            throw invalido(CAMPO_ATUALIZADO_EM, "A atualização não pode preceder a criação");
         }
         if (estado.versao() < 0) {
             throw invalido("versao", "A versão não pode ser negativa");
@@ -107,9 +108,9 @@ public final class UnidadeOrganizacional {
     public long versao() { return versao; }
 
     private void registrarAtualizacao(Instant instante, String ator) {
-        var novaData = instanteObrigatorio(instante, "atualizadoEm");
+        var novaData = instanteObrigatorio(instante, CAMPO_ATUALIZADO_EM);
         if (novaData.isBefore(criadoEm)) {
-            throw invalido("atualizadoEm", "A atualização não pode preceder a criação");
+            throw invalido(CAMPO_ATUALIZADO_EM, "A atualização não pode preceder a criação");
         }
         var novoAtor = atorObrigatorio(ator, "atualizadoPor");
         atualizadoEm = novaData;
@@ -121,7 +122,7 @@ public final class UnidadeOrganizacional {
             throw invalido("codigo", "O código é obrigatório");
         }
         var normalizado = valor.trim().toUpperCase(Locale.ROOT);
-        if (!CODIGO.matcher(normalizado).matches()) {
+        if (!PADRAO_CODIGO.matcher(normalizado).matches()) {
             throw invalido("codigo", "O código deve possuir de 2 a 50 caracteres válidos");
         }
         return normalizado;
