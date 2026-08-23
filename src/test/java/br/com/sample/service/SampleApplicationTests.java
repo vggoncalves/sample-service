@@ -15,6 +15,7 @@ class SampleApplicationTests {
 
     @Container
     @ServiceConnection
+    @SuppressWarnings("resource")
     static PostgreSQLContainer postgres =
             new PostgreSQLContainer("postgres:17-alpine")
                     .withDatabaseName("sample_test")

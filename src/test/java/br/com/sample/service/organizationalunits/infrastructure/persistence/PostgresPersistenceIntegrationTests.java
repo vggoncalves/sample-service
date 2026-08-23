@@ -23,11 +23,16 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 class PostgresPersistenceIntegrationTests {
     @Container
     @ServiceConnection
+    @SuppressWarnings("resource")
     static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17-alpine")
-            .withDatabaseName("sample_test").withUsername("sample").withPassword("sample");
+            .withDatabaseName("sample_test")
+            .withUsername("sample")
+            .withPassword("sample");
 
-    @Autowired private UnidadeOrganizacionalRepository repository;
-    @Autowired private DataSource dataSource;
+    @Autowired
+    private UnidadeOrganizacionalRepository repository;
+    @Autowired
+    private DataSource dataSource;
 
     @Test
     void iniciaContextoAplicaMigrationEExecutaRoundTripDoAgregado() throws Exception {
@@ -41,11 +46,12 @@ class PostgresPersistenceIntegrationTests {
         assertThat(repository.buscarPorId(raiz.id()).orElseThrow().estadoPersistido())
                 .isEqualTo(raizSalva.estadoPersistido());
         assertThat(repository.buscarFilhasDiretas(raiz.id()))
-                .extracting(UnidadeOrganizacional::id).containsExactly(filhaSalva.id());
+                .extracting(unidade -> unidade.id()).containsExactly(filhaSalva.id());
         assertThat(repository.existePorCodigo("MATRIZ")).isTrue();
-        try (var connection = dataSource.getConnection();
-                var result = connection.getMetaData().getTables(null, null, "unidade_organizacional", null)) {
-            assertThat(result.next()).isTrue();
+        try (var connection = dataSource.getConnection()) {
+            try (var result = connection.getMetaData().getTables(null, null, "unidade_organizacional", null)) {
+                assertThat(result.next()).isTrue();
+            }
         }
         PersistenceSchemaAssertions.assertConstraintsAndIndexes(dataSource);
     }

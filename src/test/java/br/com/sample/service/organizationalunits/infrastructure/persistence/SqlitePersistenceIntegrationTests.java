@@ -42,7 +42,8 @@ class SqlitePersistenceIntegrationTests {
         assertThat(repository.buscarPorId(raiz.id()).orElseThrow().estadoPersistido())
                 .isEqualTo(raizSalva.estadoPersistido());
         assertThat(repository.buscarFilhasDiretas(raiz.id()))
-                .extracting(UnidadeOrganizacional::id).containsExactly(filhaSalva.id());
+                .extracting(unidade -> unidade.id())
+                .containsExactly(filhaSalva.id());
         assertThat(repository.existePorCodigo("MATRIZ")).isTrue();
         try (var connection = dataSource.getConnection()) {
             assertThat(connection.getMetaData().getTables(null, null, "unidade_organizacional", null).next()).isTrue();
