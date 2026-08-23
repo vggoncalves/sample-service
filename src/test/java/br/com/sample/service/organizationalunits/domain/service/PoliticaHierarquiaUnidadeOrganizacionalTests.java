@@ -15,6 +15,8 @@ import br.com.sample.service.organizationalunits.domain.model.TipoUnidade;
 import br.com.sample.service.organizationalunits.domain.model.UnidadeOrganizacional;
 import br.com.sample.service.organizationalunits.domain.model.UnidadeOrganizacionalPersistida;
 import br.com.sample.service.organizationalunits.domain.repository.UnidadeOrganizacionalRepository;
+import br.com.sample.service.organizationalunits.domain.repository.FiltroUnidadeOrganizacional;
+import br.com.sample.service.organizationalunits.domain.repository.PaginaUnidades;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -196,6 +198,11 @@ class PoliticaHierarquiaUnidadeOrganizacionalTests {
         @Override
         public Optional<UnidadeOrganizacional> buscarPorId(UUID id) {
             return Optional.ofNullable(unidades.get(id));
+        }
+
+        @Override
+        public PaginaUnidades buscar(FiltroUnidadeOrganizacional filtro) {
+            throw new UnsupportedOperationException("Consulta paginada não é necessária neste teste de política");
         }
 
         @Override

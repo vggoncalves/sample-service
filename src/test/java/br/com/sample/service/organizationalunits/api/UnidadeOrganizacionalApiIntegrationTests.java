@@ -62,4 +62,26 @@ class UnidadeOrganizacionalApiIntegrationTests {
         mockMvc.perform(get(BASE + "/" + UUID.randomUUID()))
                 .andExpect(status().isNotFound()).andExpect(jsonPath("$.error[0].codigoErro").value("UNIDADE-0003"));
     }
+
+    @Test
+    void listaComFiltroPaginacaoEOrdenacaoControlada() throws Exception {
+        criar("FIL-01", "Financeiro Central");
+        criar("FIL-02", "Financeiro Regional");
+
+        mockMvc.perform(get(BASE).param("nome", "financeiro").param("pn", "0").param("ps", "1")
+                .param("sort", "-codigo"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.conteudo.length()").value(1))
+                .andExpect(jsonPath("$.conteudo[0].codigo").value("FIL-02"))
+                .andExpect(jsonPath("$.totalElementos").value(2)).andExpect(jsonPath("$.totalPaginas").value(2));
+        mockMvc.perform(get(BASE).param("ps", "101"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error[0].codigoErro").value("UNIDADE-0008"));
+        mockMvc.perform(get(BASE).param("sort", "inexistente"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error[0].codigoErro").value("UNIDADE-0008"));
+    }
+
+    private void criar(String codigo, String nome) throws Exception {
+        mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"codigo\":\"" + codigo + "\",\"nome\":\"" + nome + "\",\"tipo\":\"OUTRA\"}"))
+                .andExpect(status().isCreated());
+    }
 }

@@ -1,6 +1,7 @@
 package br.com.sample.service.organizationalunits.api;
 
 import br.com.sample.service.organizationalunits.application.CodigoUnidadeDuplicadoException;
+import br.com.sample.service.organizationalunits.application.ConsultaUnidadeInvalidaException;
 import br.com.sample.service.organizationalunits.application.UnidadeOrganizacionalNaoEncontradaException;
 import br.com.sample.service.organizationalunits.domain.exception.DadoUnidadeInvalidoException;
 import br.com.sample.service.organizationalunits.domain.exception.UnidadeOrganizacionalException;
@@ -25,6 +26,11 @@ public class UnidadeOrganizacionalExceptionHandler {
     @ExceptionHandler(CodigoUnidadeDuplicadoException.class)
     ResponseEntity<ApiErrorResponse> codigoDuplicado(CodigoUnidadeDuplicadoException exception) {
         return resposta(HttpStatus.CONFLICT, List.of(new ApiError(exception.getMessage(), "UNIDADE-0001", "codigo")));
+    }
+
+    @ExceptionHandler(ConsultaUnidadeInvalidaException.class)
+    ResponseEntity<ApiErrorResponse> consultaInvalida(ConsultaUnidadeInvalidaException exception) {
+        return resposta(HttpStatus.BAD_REQUEST, List.of(new ApiError(exception.getMessage(), "UNIDADE-0008", null)));
     }
 
     @ExceptionHandler(UnidadeOrganizacionalNaoEncontradaException.class)

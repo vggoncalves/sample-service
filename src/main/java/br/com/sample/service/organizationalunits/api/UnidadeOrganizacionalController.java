@@ -1,7 +1,10 @@
 package br.com.sample.service.organizationalunits.api;
 
 import br.com.sample.service.organizationalunits.application.ConsultarUnidadeOrganizacionalUseCase;
+import br.com.sample.service.organizationalunits.application.ConsultaUnidadesOrganizacionais;
 import br.com.sample.service.organizationalunits.application.CriarUnidadeOrganizacionalUseCase;
+import br.com.sample.service.organizationalunits.application.ListarUnidadesOrganizacionaisUseCase;
+import br.com.sample.service.organizationalunits.domain.model.TipoUnidade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -13,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -22,13 +26,28 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class UnidadeOrganizacionalController {
     private final CriarUnidadeOrganizacionalUseCase criar;
     private final ConsultarUnidadeOrganizacionalUseCase consultar;
+    private final ListarUnidadesOrganizacionaisUseCase listar;
     private final UnidadeOrganizacionalMapper mapper;
 
     public UnidadeOrganizacionalController(CriarUnidadeOrganizacionalUseCase criar,
-            ConsultarUnidadeOrganizacionalUseCase consultar, UnidadeOrganizacionalMapper mapper) {
+            ConsultarUnidadeOrganizacionalUseCase consultar, ListarUnidadesOrganizacionaisUseCase listar,
+            UnidadeOrganizacionalMapper mapper) {
         this.criar = criar;
         this.consultar = consultar;
+        this.listar = listar;
         this.mapper = mapper;
+    }
+
+    @GetMapping
+    @Operation(summary = "Lista unidades organizacionais com filtros, paginação e ordenação")
+    public PaginaUnidadesResponse listar(@RequestParam(required = false) String codigo,
+            @RequestParam(required = false) String nome, @RequestParam(required = false) String sigla,
+            @RequestParam(required = false) TipoUnidade tipo, @RequestParam(required = false) Boolean ativa,
+            @RequestParam(required = false) UUID unidadePaiId, @RequestParam(required = false) Boolean raiz,
+            @RequestParam(defaultValue = "0") int pn, @RequestParam(defaultValue = "20") int ps,
+            @RequestParam(defaultValue = "nome,codigo") String sort) {
+        return mapper.paraResponse(listar.executar(new ConsultaUnidadesOrganizacionais(codigo, nome, sigla, tipo,
+                ativa, unidadePaiId, raiz, pn, ps, sort)));
     }
 
     @PostMapping
