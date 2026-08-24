@@ -4,6 +4,9 @@ import br.com.sample.service.organizationalunits.application.ConsultarUnidadeOrg
 import br.com.sample.service.organizationalunits.application.ConsultaUnidadesOrganizacionais;
 import br.com.sample.service.organizationalunits.application.CriarUnidadeOrganizacionalUseCase;
 import br.com.sample.service.organizationalunits.application.ListarUnidadesOrganizacionaisUseCase;
+import br.com.sample.service.organizationalunits.application.GerenciarUnidadeOrganizacionalUseCase;
+import br.com.sample.service.organizationalunits.application.ConsultarArvoreUnidadesUseCase;
+import java.util.List;
 import br.com.sample.service.organizationalunits.domain.model.TipoUnidade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,9 +17,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -27,14 +34,19 @@ public class UnidadeOrganizacionalController {
     private final CriarUnidadeOrganizacionalUseCase criar;
     private final ConsultarUnidadeOrganizacionalUseCase consultar;
     private final ListarUnidadesOrganizacionaisUseCase listar;
+    private final GerenciarUnidadeOrganizacionalUseCase gerenciar;
+    private final ConsultarArvoreUnidadesUseCase arvore;
     private final UnidadeOrganizacionalMapper mapper;
 
     public UnidadeOrganizacionalController(CriarUnidadeOrganizacionalUseCase criar,
             ConsultarUnidadeOrganizacionalUseCase consultar, ListarUnidadesOrganizacionaisUseCase listar,
+            GerenciarUnidadeOrganizacionalUseCase gerenciar, ConsultarArvoreUnidadesUseCase arvore,
             UnidadeOrganizacionalMapper mapper) {
         this.criar = criar;
         this.consultar = consultar;
         this.listar = listar;
+        this.gerenciar = gerenciar;
+        this.arvore = arvore;
         this.mapper = mapper;
     }
 
@@ -62,5 +74,41 @@ public class UnidadeOrganizacionalController {
     @Operation(summary = "Consulta uma unidade organizacional por identificador")
     public UnidadeResponse consultar(@PathVariable UUID id) {
         return mapper.paraResponse(consultar.executar(id));
+    }
+
+    @GetMapping("/{id}/filhas")
+    @Operation(summary = "Lista filhas diretas de uma unidade")
+    public PaginaUnidadesResponse listarFilhas(@PathVariable UUID id, @RequestParam(required = false) Boolean ativa,
+            @RequestParam(defaultValue = "0") int pn, @RequestParam(defaultValue = "20") int ps,
+            @RequestParam(defaultValue = "nome,codigo") String sort) {
+        consultar.executar(id);
+        return mapper.paraResponse(listar.executar(new ConsultaUnidadesOrganizacionais(null, null, null, null,
+                ativa, id, null, pn, ps, sort)));
+    }
+
+    @GetMapping("/arvore")
+    @Operation(summary = "Consulta árvore organizacional com profundidade limitada")
+    public List<NoArvoreResponse> consultarArvore(@RequestParam(required = false) UUID raizId,
+            @RequestParam(required = false) Boolean ativa, @RequestParam(defaultValue = "5") int profundidade) {
+        return arvore.executar(raizId, ativa, profundidade).stream().map(mapper::paraResponse).toList();
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Altera integralmente os dados editáveis de uma unidade")
+    public UnidadeResponse alterar(@PathVariable UUID id, @Valid @RequestBody AlterarUnidadeRequest request) {
+        return mapper.paraResponse(gerenciar.alterar(id, request.versao(), mapper.paraDadosBasicos(request)));
+    }
+
+    @PatchMapping("/{id}")
+    @Operation(summary = "Altera a situação de uma unidade")
+    public UnidadeResponse alterarSituacao(@PathVariable UUID id, @Valid @RequestBody AlterarSituacaoRequest request) {
+        return mapper.paraResponse(gerenciar.alterarSituacao(id, request.versao(), request.ativa()));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Desativa logicamente uma unidade")
+    public ResponseEntity<Void> desativar(@PathVariable UUID id, @RequestHeader("If-Match") long versao) {
+        gerenciar.alterarSituacao(id, versao, false);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -2,6 +2,9 @@ package br.com.sample.service.organizationalunits.api;
 
 import br.com.sample.service.organizationalunits.application.CodigoUnidadeDuplicadoException;
 import br.com.sample.service.organizationalunits.application.ConsultaUnidadeInvalidaException;
+import br.com.sample.service.organizationalunits.application.ConflitoVersaoUnidadeException;
+import br.com.sample.service.organizationalunits.application.ArvoreUnidadeInvalidaException;
+import br.com.sample.service.organizationalunits.application.LimiteArvoreExcedidoException;
 import br.com.sample.service.organizationalunits.application.UnidadeOrganizacionalNaoEncontradaException;
 import br.com.sample.service.organizationalunits.domain.exception.DadoUnidadeInvalidoException;
 import br.com.sample.service.organizationalunits.domain.exception.UnidadeOrganizacionalException;
@@ -31,6 +34,21 @@ public class UnidadeOrganizacionalExceptionHandler {
     @ExceptionHandler(ConsultaUnidadeInvalidaException.class)
     ResponseEntity<ApiErrorResponse> consultaInvalida(ConsultaUnidadeInvalidaException exception) {
         return resposta(HttpStatus.BAD_REQUEST, List.of(new ApiError(exception.getMessage(), "UNIDADE-0008", null)));
+    }
+
+    @ExceptionHandler(ConflitoVersaoUnidadeException.class)
+    ResponseEntity<ApiErrorResponse> conflitoVersao(ConflitoVersaoUnidadeException exception) {
+        return resposta(HttpStatus.CONFLICT, List.of(new ApiError(exception.getMessage(), "UNIDADE-0009", "versao")));
+    }
+
+    @ExceptionHandler(ArvoreUnidadeInvalidaException.class)
+    ResponseEntity<ApiErrorResponse> arvoreInvalida(ArvoreUnidadeInvalidaException exception) {
+        return resposta(HttpStatus.BAD_REQUEST, List.of(new ApiError(exception.getMessage(), "UNIDADE-0014", "profundidade")));
+    }
+
+    @ExceptionHandler(LimiteArvoreExcedidoException.class)
+    ResponseEntity<ApiErrorResponse> limiteArvore(LimiteArvoreExcedidoException exception) {
+        return resposta(HttpStatus.UNPROCESSABLE_CONTENT, List.of(new ApiError(exception.getMessage(), "UNIDADE-0015", null)));
     }
 
     @ExceptionHandler(UnidadeOrganizacionalNaoEncontradaException.class)

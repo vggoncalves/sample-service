@@ -206,6 +206,11 @@ class PoliticaHierarquiaUnidadeOrganizacionalTests {
         }
 
         @Override
+        public List<UnidadeOrganizacional> buscarRaizes() {
+            return unidades.values().stream().filter(unidade -> unidade.unidadePaiId() == null).toList();
+        }
+
+        @Override
         public List<UnidadeOrganizacional> buscarFilhasDiretas(UUID paiId) {
             var resultado = unidades.values().stream().filter(unidade -> paiId.equals(unidade.unidadePaiId())).toList();
             if (!filhasForcadas.containsKey(paiId)) {

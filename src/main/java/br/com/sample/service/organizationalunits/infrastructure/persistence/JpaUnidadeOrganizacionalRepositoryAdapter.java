@@ -41,6 +41,11 @@ public class JpaUnidadeOrganizacionalRepositoryAdapter implements UnidadeOrganiz
     }
 
     @Override
+    public List<UnidadeOrganizacional> buscarRaizes() {
+        return repository.findByUnidadePaiIdIsNull().stream().map(this::paraDominio).toList();
+    }
+
+    @Override
     public List<UnidadeOrganizacional> buscarFilhasDiretas(UUID unidadePaiId) {
         return repository.findByUnidadePaiId(unidadePaiId.toString()).stream().map(this::paraDominio).toList();
     }

@@ -8,4 +8,5 @@ interface SpringDataUnidadeOrganizacionalRepository
         extends JpaRepository<UnidadeOrganizacionalJpaEntity, String>, JpaSpecificationExecutor<UnidadeOrganizacionalJpaEntity> {
     boolean existsByCodigo(String codigo);
     List<UnidadeOrganizacionalJpaEntity> findByUnidadePaiId(String unidadePaiId);
+    List<UnidadeOrganizacionalJpaEntity> findByUnidadePaiIdIsNull();
 }

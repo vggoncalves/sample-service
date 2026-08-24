@@ -2,6 +2,9 @@ package br.com.sample.service.organizationalunits.api;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -79,9 +82,48 @@ class UnidadeOrganizacionalApiIntegrationTests {
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error[0].codigoErro").value("UNIDADE-0008"));
     }
 
+    @Test
+    void alteraSituacaoERejeitaVersaoDesatualizada() throws Exception {
+        var id = criarId("ALT-01", "Unidade Alterável", null);
+
+        mockMvc.perform(put(BASE + "/" + id).contentType(MediaType.APPLICATION_JSON).content("""
+                {"nome":"Unidade Alterada","sigla":"UAL","tipo":"OUTRA","versao":0}
+                """))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.nome").value("Unidade Alterada"))
+                .andExpect(jsonPath("$.versao").value(1));
+        mockMvc.perform(patch(BASE + "/" + id).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"ativa\":false,\"versao\":1}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.ativa").value(false));
+        mockMvc.perform(patch(BASE + "/" + id).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"ativa\":true,\"versao\":1}"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.error[0].codigoErro").value("UNIDADE-0009"));
+    }
+
+    @Test
+    void consultaFilhasArvoreEDesativacaoRespeitaDescendentes() throws Exception {
+        var raiz = criarId("RAIZ-07", "Raiz da Árvore", null);
+        criarId("FILHA-07", "Filha da Árvore", raiz);
+
+        mockMvc.perform(get(BASE + "/" + raiz + "/filhas"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElementos").value(1));
+        mockMvc.perform(get(BASE + "/arvore").param("raizId", raiz).param("profundidade", "2"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].unidade.id").value(raiz))
+                .andExpect(jsonPath("$[0].filhas.length()").value(1));
+        mockMvc.perform(get(BASE + "/arvore").param("profundidade", "0"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error[0].codigoErro").value("UNIDADE-0014"));
+        mockMvc.perform(delete(BASE + "/" + raiz).header("If-Match", "0"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.error[0].codigoErro").value("UNIDADE-0007"));
+    }
+
     private void criar(String codigo, String nome) throws Exception {
-        mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"codigo\":\"" + codigo + "\",\"nome\":\"" + nome + "\",\"tipo\":\"OUTRA\"}"))
-                .andExpect(status().isCreated());
+        criarId(codigo, nome, null);
+    }
+
+    private String criarId(String codigo, String nome, String unidadePaiId) throws Exception {
+        var pai = unidadePaiId == null ? "" : ",\"unidadePaiId\":\"" + unidadePaiId + "\"";
+        var resposta = mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"codigo\":\"" + codigo + "\",\"nome\":\"" + nome + "\",\"tipo\":\"OUTRA\"" + pai + "}"))
+                .andExpect(status().isCreated()).andReturn();
+        return com.jayway.jsonpath.JsonPath.read(resposta.getResponse().getContentAsString(), "$.id");
     }
 }
