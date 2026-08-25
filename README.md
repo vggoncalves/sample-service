@@ -194,6 +194,43 @@ http://localhost:8080/
 
 é permitida. O backend não precisa fornecer uma página inicial.
 
+## Autenticação e autorização locais
+
+Nos perfis `local-sqlite` e `local-postgres`, a API e o Swagger exigem autenticação HTTP Basic. As identidades abaixo existem exclusivamente para desenvolvimento e testes locais. Defina senhas próprias fora do código antes de iniciar a aplicação:
+
+```bash
+read -r -s -p 'Senha do admin local: ' SAMPLE_LOCAL_ADMIN_PASSWORD
+export SAMPLE_LOCAL_ADMIN_PASSWORD
+printf '\n'
+read -r -s -p 'Senha do consulta local: ' SAMPLE_LOCAL_CONSULTA_PASSWORD
+export SAMPLE_LOCAL_CONSULTA_PASSWORD
+printf '\n'
+```
+
+| Usuário | Variável de senha | Permissões |
+|---|---|---|
+| `admin` | `SAMPLE_LOCAL_ADMIN_PASSWORD` | consultar, criar, alterar e desativar unidades |
+| `consulta` | `SAMPLE_LOCAL_CONSULTA_PASSWORD` | consultar unidades |
+
+Exemplo de consulta autenticada:
+
+```bash
+curl -u consulta:"$SAMPLE_LOCAL_CONSULTA_PASSWORD" \
+  'http://localhost:8080/api/unidadesOrganizacionais/v1.0.0/unidadesOrganizacionais?pn=0&ps=20'
+```
+
+Operações que alteram dados também exigem um token CSRF. Obtenha-o com uma sessão autenticada antes de enviar `POST`, `PUT`, `PATCH` ou `DELETE`:
+
+```bash
+curl -u admin:"$SAMPLE_LOCAL_ADMIN_PASSWORD" -c /tmp/sample.cookies http://localhost:8080/csrf
+```
+
+Envie o valor `token` retornado no cabeçalho indicado por `headerName`, junto com o cookie salvo em `/tmp/sample.cookies`.
+
+As permissões são centralizadas em `Permissao` e aplicadas nos métodos do controlador. A identidade que preenche `criadoPor` e `atualizadoPor` é fornecida pela porta `PrincipalAtual`, mantendo o domínio independente de Spring Security.
+
+Para homologação e produção, a substituição prevista é um adaptador OIDC/Keycloak que implemente `PrincipalAtual` a partir do token validado. Nesses ambientes, remova o `UserDetailsService` local e configure o Resource Server; as identidades e senhas locais não devem ser usadas. Eventos administrativos de criação, alteração, reativação e desativação são registrados somente após o commit da transação, sem registrar os dados funcionais da unidade.
+
 ---
 
 ## Qualidade

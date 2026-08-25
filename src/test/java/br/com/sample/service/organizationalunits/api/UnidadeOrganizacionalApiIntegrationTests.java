@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import java.nio.file.Path;
 import java.util.UUID;
@@ -20,24 +21,32 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.context.support.WithAnonymousUser;
 
 @ActiveProfiles("local-sqlite")
 @AutoConfigureMockMvc
 @SpringBootTest
+@WithMockUser(username = "admin", authorities = {"UNIDADE_CONSULTAR", "UNIDADE_CRIAR", "UNIDADE_ALTERAR", "UNIDADE_DESATIVAR"})
 class UnidadeOrganizacionalApiIntegrationTests {
     private static final Path DATABASE = Path.of("target", "sqlite-api-" + UUID.randomUUID() + ".db");
     private static final String BASE = "/api/unidadesOrganizacionais/v1.0.0/unidadesOrganizacionais";
+    private static final String SENHA_ADMIN_LOCAL = UUID.randomUUID().toString();
+    private static final String SENHA_CONSULTA_LOCAL = UUID.randomUUID().toString();
 
     @Autowired private MockMvc mockMvc;
 
     @DynamicPropertySource
     static void databaseProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", () -> "jdbc:sqlite:" + DATABASE);
+        registry.add("SAMPLE_LOCAL_ADMIN_PASSWORD", () -> SENHA_ADMIN_LOCAL);
+        registry.add("SAMPLE_LOCAL_CONSULTA_PASSWORD", () -> SENHA_CONSULTA_LOCAL);
     }
 
     @Test
     void criaEConsultaUnidade() throws Exception {
-        var resposta = mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON).content("""
+        var resposta = mockMvc.perform(post(BASE).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
                 {"codigo":" dir-fin ","nome":"Diretoria Financeira","sigla":"difin","tipo":"DIRETORIA"}
                 """))
                 .andExpect(status().isCreated())
@@ -56,10 +65,11 @@ class UnidadeOrganizacionalApiIntegrationTests {
     @Test
     void retornaErrosPadronizadosParaDuplicidadeEntradaInvalidaEInexistencia() throws Exception {
         var corpo = "{\"codigo\":\"DUP-01\",\"nome\":\"Unidade Duplicada\",\"tipo\":\"OUTRA\"}";
-        mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON).content(corpo)).andExpect(status().isCreated());
-        mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON).content(corpo))
+        mockMvc.perform(post(BASE).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isCreated());
+        mockMvc.perform(post(BASE).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.error[0].codigoErro").value("UNIDADE-0001"));
-        mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post(BASE).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"codigo\":\"X\",\"nome\":\"\",\"tipo\":null}"))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error[0].codigoErro").value("UNIDADE-0002"));
         mockMvc.perform(get(BASE + "/" + UUID.randomUUID()))
@@ -86,15 +96,15 @@ class UnidadeOrganizacionalApiIntegrationTests {
     void alteraSituacaoERejeitaVersaoDesatualizada() throws Exception {
         var id = criarId("ALT-01", "Unidade Alterável", null);
 
-        mockMvc.perform(put(BASE + "/" + id).contentType(MediaType.APPLICATION_JSON).content("""
+        mockMvc.perform(put(BASE + "/" + id).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
                 {"nome":"Unidade Alterada","sigla":"UAL","tipo":"OUTRA","versao":0}
                 """))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.nome").value("Unidade Alterada"))
                 .andExpect(jsonPath("$.versao").value(1));
-        mockMvc.perform(patch(BASE + "/" + id).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(patch(BASE + "/" + id).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"ativa\":false,\"versao\":1}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.ativa").value(false));
-        mockMvc.perform(patch(BASE + "/" + id).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(patch(BASE + "/" + id).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"ativa\":true,\"versao\":1}"))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.error[0].codigoErro").value("UNIDADE-0009"));
     }
@@ -111,8 +121,35 @@ class UnidadeOrganizacionalApiIntegrationTests {
                 .andExpect(jsonPath("$[0].filhas.length()").value(1));
         mockMvc.perform(get(BASE + "/arvore").param("profundidade", "0"))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error[0].codigoErro").value("UNIDADE-0014"));
-        mockMvc.perform(delete(BASE + "/" + raiz).header("If-Match", "0"))
+        mockMvc.perform(delete(BASE + "/" + raiz).with(csrf()).header("If-Match", "0"))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.error[0].codigoErro").value("UNIDADE-0007"));
+    }
+
+    @Test
+    @WithAnonymousUser
+    void rejeitaUsuarioNaoAutenticado() throws Exception {
+        mockMvc.perform(get(BASE)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "consulta", authorities = "UNIDADE_CONSULTAR")
+    void rejeitaUsuarioSemPermissaoDeCriar() throws Exception {
+        mockMvc.perform(post(BASE).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"codigo\":\"SEM-01\",\"nome\":\"Sem Permissão\",\"tipo\":\"OUTRA\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void aplicaIdentidadesLocaisComAutenticacaoBasica() throws Exception {
+        mockMvc.perform(post(BASE).with(httpBasic("admin", SENHA_ADMIN_LOCAL)).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"codigo\":\"BAS-01\",\"nome\":\"Autenticação Básica\",\"tipo\":\"OUTRA\"}"))
+                .andExpect(status().isCreated());
+        mockMvc.perform(post(BASE).with(httpBasic("consulta", SENHA_CONSULTA_LOCAL)).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"codigo\":\"BAS-02\",\"nome\":\"Sem Escrita\",\"tipo\":\"OUTRA\"}"))
+                .andExpect(status().isForbidden());
     }
 
     private void criar(String codigo, String nome) throws Exception {
@@ -121,7 +158,7 @@ class UnidadeOrganizacionalApiIntegrationTests {
 
     private String criarId(String codigo, String nome, String unidadePaiId) throws Exception {
         var pai = unidadePaiId == null ? "" : ",\"unidadePaiId\":\"" + unidadePaiId + "\"";
-        var resposta = mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON)
+        var resposta = mockMvc.perform(post(BASE).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"codigo\":\"" + codigo + "\",\"nome\":\"" + nome + "\",\"tipo\":\"OUTRA\"" + pai + "}"))
                 .andExpect(status().isCreated()).andReturn();
         return com.jayway.jsonpath.JsonPath.read(resposta.getResponse().getContentAsString(), "$.id");

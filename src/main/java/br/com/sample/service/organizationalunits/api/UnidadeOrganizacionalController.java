@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/unidadesOrganizacionais/v1.0.0/unidadesOrganizacionais")
@@ -51,6 +52,7 @@ public class UnidadeOrganizacionalController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority(T(br.com.sample.service.security.Permissao).UNIDADE_CONSULTAR.name())")
     @Operation(summary = "Lista unidades organizacionais com filtros, paginação e ordenação")
     public PaginaUnidadesResponse listar(@RequestParam(required = false) String codigo,
             @RequestParam(required = false) String nome, @RequestParam(required = false) String sigla,
@@ -63,6 +65,7 @@ public class UnidadeOrganizacionalController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority(T(br.com.sample.service.security.Permissao).UNIDADE_CRIAR.name())")
     @Operation(summary = "Cria uma unidade organizacional ativa")
     public ResponseEntity<UnidadeResponse> criar(@Valid @RequestBody CriarUnidadeRequest request) {
         var unidade = criar.executar(request.codigo(), mapper.paraDadosBasicos(request));
@@ -71,12 +74,14 @@ public class UnidadeOrganizacionalController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority(T(br.com.sample.service.security.Permissao).UNIDADE_CONSULTAR.name())")
     @Operation(summary = "Consulta uma unidade organizacional por identificador")
     public UnidadeResponse consultar(@PathVariable UUID id) {
         return mapper.paraResponse(consultar.executar(id));
     }
 
     @GetMapping("/{id}/filhas")
+    @PreAuthorize("hasAuthority(T(br.com.sample.service.security.Permissao).UNIDADE_CONSULTAR.name())")
     @Operation(summary = "Lista filhas diretas de uma unidade")
     public PaginaUnidadesResponse listarFilhas(@PathVariable UUID id, @RequestParam(required = false) Boolean ativa,
             @RequestParam(defaultValue = "0") int pn, @RequestParam(defaultValue = "20") int ps,
@@ -87,6 +92,7 @@ public class UnidadeOrganizacionalController {
     }
 
     @GetMapping("/arvore")
+    @PreAuthorize("hasAuthority(T(br.com.sample.service.security.Permissao).UNIDADE_CONSULTAR.name())")
     @Operation(summary = "Consulta árvore organizacional com profundidade limitada")
     public List<NoArvoreResponse> consultarArvore(@RequestParam(required = false) UUID raizId,
             @RequestParam(required = false) Boolean ativa, @RequestParam(defaultValue = "5") int profundidade) {
@@ -94,18 +100,21 @@ public class UnidadeOrganizacionalController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority(T(br.com.sample.service.security.Permissao).UNIDADE_ALTERAR.name())")
     @Operation(summary = "Altera integralmente os dados editáveis de uma unidade")
     public UnidadeResponse alterar(@PathVariable UUID id, @Valid @RequestBody AlterarUnidadeRequest request) {
         return mapper.paraResponse(gerenciar.alterar(id, request.versao(), mapper.paraDadosBasicos(request)));
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAuthority(T(br.com.sample.service.security.Permissao).UNIDADE_DESATIVAR.name())")
     @Operation(summary = "Altera a situação de uma unidade")
     public UnidadeResponse alterarSituacao(@PathVariable UUID id, @Valid @RequestBody AlterarSituacaoRequest request) {
         return mapper.paraResponse(gerenciar.alterarSituacao(id, request.versao(), request.ativa()));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority(T(br.com.sample.service.security.Permissao).UNIDADE_DESATIVAR.name())")
     @Operation(summary = "Desativa logicamente uma unidade")
     public ResponseEntity<Void> desativar(@PathVariable UUID id, @RequestHeader("If-Match") long versao) {
         gerenciar.alterarSituacao(id, versao, false);
