@@ -15,11 +15,18 @@ management:
     endpoints:
         web:
             exposure:
-                include: health,info
+                include: health,info,metrics
     endpoint:
         health:
             probes:
                 enabled: true
+    metrics:
+        tags:
+            application: ${spring.application.name}
+
+logging:
+    pattern:
+        correlation: "[correlationId:%X{correlationId:-}] "
 
 springdoc:
     swagger-ui:

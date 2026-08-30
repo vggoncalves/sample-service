@@ -21,6 +21,8 @@ import org.springframework.test.context.DynamicPropertySource;
 @SpringBootTest
 class SqlitePersistenceIntegrationTests {
     private static final Path DATABASE = Path.of("target", "sqlite-test-" + UUID.randomUUID() + ".db");
+    private static final String SENHA_ADMIN_LOCAL = UUID.randomUUID().toString();
+    private static final String SENHA_CONSULTA_LOCAL = UUID.randomUUID().toString();
 
     @Autowired private UnidadeOrganizacionalRepository repository;
     @Autowired private DataSource dataSource;
@@ -28,6 +30,8 @@ class SqlitePersistenceIntegrationTests {
     @DynamicPropertySource
     static void databaseProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", () -> "jdbc:sqlite:" + DATABASE);
+        registry.add("SAMPLE_LOCAL_ADMIN_PASSWORD", () -> SENHA_ADMIN_LOCAL);
+        registry.add("SAMPLE_LOCAL_CONSULTA_PASSWORD", () -> SENHA_CONSULTA_LOCAL);
     }
 
     @Test

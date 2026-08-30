@@ -29,6 +29,7 @@
 	<properties>
 		<java.version>25</java.version>
 		<jacoco.version>0.8.15</jacoco.version>
+		<archunit.version>1.5.0</archunit.version>
 		<sonar-maven-plugin.version>5.7.0.6970</sonar-maven-plugin.version>
 		<dependency-check.version>12.2.2</dependency-check.version>
 		<sonar.coverage.jacoco.xmlReportPaths>
@@ -38,7 +39,7 @@
 		<!-- Overrides de segurança Dependency-Check-->
 		<postgresql.version>42.7.12</postgresql.version>
 		<sqlite-jdbc.version>3.53.2.0</sqlite-jdbc.version>
-		<tomcat.version>11.0.24</tomcat.version>
+		<tomcat.version>11.0.25</tomcat.version>
 
 		<jackson-2-bom.version>2.21.5</jackson-2-bom.version>
 		<log4j2.version>2.25.5</log4j2.version>
@@ -165,6 +166,12 @@
 			<artifactId>testcontainers-postgresql</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.tngtech.archunit</groupId>
+			<artifactId>archunit-junit5</artifactId>
+			<version>${archunit.version}</version>
+			<scope>test</scope>
+		</dependency>
 
 	</dependencies>
 
@@ -177,6 +184,7 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
 
 				<configuration>
 					<excludes>

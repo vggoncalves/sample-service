@@ -316,9 +316,38 @@ Tokens não devem ser armazenados:
 
 A cobertura de código é coletada utilizando **JaCoCo**.
 
-O relatório é produzido durante as execuções Maven configuradas para cobertura e pode ser utilizado pelo SonarQube durante a análise do projeto.
+O relatório XML é gerado automaticamente por `mvn verify`, sem etapa manual adicional, em:
+
+```text
+target/site/jacoco/jacoco.xml
+```
+
+Ele pode ser utilizado pelo SonarQube durante a análise do projeto e não deve ser versionado.
 
 A existência de cobertura não substitui a necessidade de testes relevantes para regras de negócio e critérios de aceite.
+
+## Observabilidade local
+
+Toda resposta recebe o cabeçalho `X-Correlation-Id`. Envie um valor alfanumérico de até 64 caracteres para correlacionar uma chamada com os logs; se ele estiver ausente ou for inválido, a aplicação gera um UUID.
+
+O Actuator expõe, além de health e info, métricas autenticadas em:
+
+```text
+http://localhost:8080/actuator/metrics
+http://localhost:8080/actuator/metrics/http.server.requests
+```
+
+O endpoint de health continua público para sondas de disponibilidade. Métricas, Swagger e API permanecem protegidos nos perfis locais.
+
+## Smoke tests
+
+A coleção manual de smoke tests está em:
+
+```text
+../sample-docs/http/smoke-unidades-organizacionais.http
+```
+
+Ela não contém credenciais: configure `basicAuth` localmente no cliente HTTP e obtenha o token CSRF antes de executar operações de escrita.
 
 ---
 

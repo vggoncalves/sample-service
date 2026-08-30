@@ -69,9 +69,11 @@ class UnidadeOrganizacionalApiIntegrationTests {
                 .andExpect(status().isCreated());
         mockMvc.perform(post(BASE).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.error[0].codigoErro").value("UNIDADE-0001"));
-        mockMvc.perform(post(BASE).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post(BASE).with(csrf()).header("X-Correlation-Id", "correlation-erro-9")
+                .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"codigo\":\"X\",\"nome\":\"\",\"tipo\":null}"))
-                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error[0].codigoErro").value("UNIDADE-0002"));
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error[0].codigoErro").value("UNIDADE-0002"))
+                .andExpect(jsonPath("$.correlationId").value("correlation-erro-9"));
         mockMvc.perform(get(BASE + "/" + UUID.randomUUID()))
                 .andExpect(status().isNotFound()).andExpect(jsonPath("$.error[0].codigoErro").value("UNIDADE-0003"));
     }
@@ -129,6 +131,21 @@ class UnidadeOrganizacionalApiIntegrationTests {
     @WithAnonymousUser
     void rejeitaUsuarioNaoAutenticado() throws Exception {
         mockMvc.perform(get(BASE)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void propagaCorrelationIdNoCabecalhoDaResposta() throws Exception {
+        mockMvc.perform(get("/csrf").header("X-Correlation-Id", "correlation-smoke-9"))
+                .andExpect(status().isOk()).andExpect(header().string("X-Correlation-Id", "correlation-smoke-9"))
+                .andExpect(jsonPath("$.token").isNotEmpty());
+    }
+
+    @Test
+    void expoeMetricasEContratoOpenApiParaClienteAutenticado() throws Exception {
+        mockMvc.perform(get("/actuator/metrics")).andExpect(status().isOk()).andExpect(jsonPath("$.names").isArray());
+        mockMvc.perform(get("/v3/api-docs")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.info.title").value("API de Unidades Organizacionais"))
+                .andExpect(jsonPath("$.components.securitySchemes.basicAuth.scheme").value("basic"));
     }
 
     @Test

@@ -11,6 +11,7 @@ import br.com.sample.service.organizationalunits.domain.exception.UnidadeOrganiz
 import br.com.sample.service.organizationalunits.domain.exception.UnidadePaiInexistenteException;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -73,6 +74,8 @@ public class UnidadeOrganizacionalExceptionHandler {
     }
 
     private static ResponseEntity<ApiErrorResponse> resposta(HttpStatus status, List<ApiError> erros) {
-        return ResponseEntity.status(status).body(new ApiErrorResponse(erros, UUID.randomUUID().toString()));
+        var correlationId = MDC.get("correlationId");
+        return ResponseEntity.status(status).body(new ApiErrorResponse(erros,
+                correlationId == null ? UUID.randomUUID().toString() : correlationId));
     }
 }
