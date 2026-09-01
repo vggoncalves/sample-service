@@ -104,11 +104,24 @@ Configuração:
 application-local-sqlite.yaml
 ```
 
+Antes de iniciar, defina as credenciais locais no mesmo terminal. Elas não devem ser gravadas em arquivos nem no histórico do shell:
+
+```bash
+read -r -s -p 'Senha do admin local: ' SAMPLE_LOCAL_ADMIN_PASSWORD
+export SAMPLE_LOCAL_ADMIN_PASSWORD
+printf '\n'
+read -r -s -p 'Senha do consulta local: ' SAMPLE_LOCAL_CONSULTA_PASSWORD
+export SAMPLE_LOCAL_CONSULTA_PASSWORD
+printf '\n'
+```
+
 Executar:
 
 ```bash
-SPRING_PROFILES_ACTIVE=local-sqlite mvn spring-boot:run
+SPRING_PROFILES_ACTIVE=local-sqlite ./mvnw spring-boot:run
 ```
+
+As variáveis precisam existir no processo de inicialização. Para alterar uma senha, encerre o serviço e execute esse fluxo novamente.
 
 O banco SQLite utilizado no desenvolvimento local é armazenado fora do repositório.
 
@@ -156,19 +169,15 @@ Os testes de integração podem utilizar PostgreSQL real por meio de **Testconta
 
 ---
 
-## Executar a aplicação
+## Acesso local
 
-Com SQLite:
-
-```bash
-SPRING_PROFILES_ACTIVE=local-sqlite mvn spring-boot:run
-```
-
-Por padrão, a aplicação estará disponível em:
+Com o perfil SQLite iniciado, a API estará disponível em:
 
 ```text
 http://localhost:8080
 ```
+
+Ao executar dentro de um Dev Container, encaminhe a porta `8080` pela aba **Ports** do VS Code e use **Open in Browser**. O `localhost` do navegador pode não ser o mesmo `localhost` do container.
 
 ---
 

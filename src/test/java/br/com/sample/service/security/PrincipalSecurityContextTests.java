@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -29,7 +30,7 @@ class PrincipalSecurityContextTests {
 
     @Test
     void rejeitaContextoSemAutenticacao() {
-        assertThrows(PrincipalNaoAutenticadoException.class, principalAtual::identificador);
+        assertThrows(AccessDeniedException.class, principalAtual::identificador);
     }
 
     @Test
@@ -37,6 +38,6 @@ class PrincipalSecurityContextTests {
         SecurityContextHolder.getContext().setAuthentication(new AnonymousAuthenticationToken("chave", "anonymous",
                 AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS")));
 
-        assertThrows(PrincipalNaoAutenticadoException.class, principalAtual::identificador);
+        assertThrows(AccessDeniedException.class, principalAtual::identificador);
     }
 }

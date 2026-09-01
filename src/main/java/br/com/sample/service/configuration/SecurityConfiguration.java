@@ -11,6 +11,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.core.env.Environment;
 
@@ -31,21 +33,26 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    UserDetailsService usuariosLocais(Environment environment) {
-        var administrador = User.withUsername("admin").password(senhaCodificada(environment, "SAMPLE_LOCAL_ADMIN_PASSWORD"))
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    UserDetailsService usuariosLocais(Environment environment, PasswordEncoder passwordEncoder) {
+        var administrador = User.withUsername("admin").password(senhaCodificada(environment, "SAMPLE_LOCAL_ADMIN_PASSWORD", passwordEncoder))
                 .authorities(
                 Permissao.UNIDADE_CONSULTAR.name(), Permissao.UNIDADE_CRIAR.name(), Permissao.UNIDADE_ALTERAR.name(),
                 Permissao.UNIDADE_DESATIVAR.name()).build();
-        var consulta = User.withUsername("consulta").password(senhaCodificada(environment, "SAMPLE_LOCAL_CONSULTA_PASSWORD"))
+        var consulta = User.withUsername("consulta").password(senhaCodificada(environment, "SAMPLE_LOCAL_CONSULTA_PASSWORD", passwordEncoder))
                 .authorities(Permissao.UNIDADE_CONSULTAR.name()).build();
         return new InMemoryUserDetailsManager(administrador, consulta);
     }
 
-    private static String senhaCodificada(Environment environment, String propriedade) {
+    private static String senhaCodificada(Environment environment, String propriedade, PasswordEncoder passwordEncoder) {
         var senha = environment.getProperty(propriedade);
         if (senha == null || senha.isBlank()) {
             throw new CredencialLocalAusenteException(propriedade);
         }
-        return "{noop}" + senha;
+        return passwordEncoder.encode(senha);
     }
 }
