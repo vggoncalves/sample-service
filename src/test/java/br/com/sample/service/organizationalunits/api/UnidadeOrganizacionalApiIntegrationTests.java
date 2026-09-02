@@ -45,6 +45,16 @@ class UnidadeOrganizacionalApiIntegrationTests {
     }
 
     @Test
+    @WithMockUser(username = "consulta", authorities = {"UNIDADE_CONSULTAR"})
+    void expoeSomenteCapacidadesPermitidasAoUsuarioAutenticado() throws Exception {
+        mockMvc.perform(get(BASE + "/capacidades"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.podeCriar").value(false))
+                .andExpect(jsonPath("$.podeAlterar").value(false))
+                .andExpect(jsonPath("$.podeAlterarSituacao").value(false));
+    }
+
+    @Test
     void criaEConsultaUnidade() throws Exception {
         var resposta = mockMvc.perform(post(BASE).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
                 {"codigo":" dir-fin ","nome":"Diretoria Financeira","sigla":"difin","tipo":"DIRETORIA"}
