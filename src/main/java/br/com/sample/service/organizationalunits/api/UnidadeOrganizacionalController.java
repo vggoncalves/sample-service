@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import br.com.sample.service.security.Permissao;
 
 @RestController
@@ -70,7 +71,8 @@ public class UnidadeOrganizacionalController {
     @PreAuthorize("hasAuthority(T(br.com.sample.service.security.Permissao).UNIDADE_CONSULTAR.name())")
     @Operation(summary = "Consulta capacidades efetivas do usuário para unidades organizacionais")
     public CapacidadesUnidadeResponse capacidades(Authentication authentication) {
-        var autoridades = authentication.getAuthorities().stream().map(autoridade -> autoridade.getAuthority()).collect(java.util.stream.Collectors.toSet());
+        var autoridades = authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+                .collect(java.util.stream.Collectors.toSet());
         return new CapacidadesUnidadeResponse(autoridades.contains(Permissao.UNIDADE_CRIAR.name()),
                 autoridades.contains(Permissao.UNIDADE_ALTERAR.name()), autoridades.contains(Permissao.UNIDADE_DESATIVAR.name()));
     }
